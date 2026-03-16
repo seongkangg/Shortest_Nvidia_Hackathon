@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nemotron Resume Builder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0a0f1a;
+        --card: rgba(15, 23, 42, 0.95);
+        --border: rgba(148, 163, 184, 0.25);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #22c55e;
+        --accent2: #0ea5e9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+      h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+      h2 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem; color: var(--muted); }
+      .card {
+        background: var(--card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        margin-bottom: 1rem;
+      }
+      label { display: block; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--muted); }
+      input, textarea, select {
+        width: 100%;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,0.3);
+        color: var(--text);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        outline: none;
+        margin-bottom: 0.5rem;
+      }
+      input:focus, textarea:focus { border-color: var(--accent); }
+      .row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+      button {
+        border-radius: 0.5rem;
+        border: none;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #020617;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+      button.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+      .pill {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.25rem 0.6rem; border-radius: 999px;
+        background: var(--card); border: 1px solid var(--border);
+        font-size: 0.75rem; color: var(--muted);
+      }
+      .repo-list { max-height: 200px; overflow-y: auto; }
+      .repo-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+      .repo-item input { width: auto; margin: 0; }
+      .status { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+      .status.error { color: #f87171; }
+      .status.success { color: var(--accent); }
+      .flex { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+      .resume-list { list-style: none; padding: 0; margin: 0; }
+      .resume-list li {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+      }
+      .resume-list li button { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <p class="pill">Nemotron-powered resume builder · nvidia/nvidia-nemotron-nano-9b-v2</p>
+        <h1>AI Resume Builder</h1>
+        <p style="color: var(--muted); max-width: 36rem; font-size: 0.9rem">
+          Connect GitHub (repos), add LinkedIn summary, paste a job link or description, and generate a LaTeX resume. Edit and save anytime.
+        </p>
+      </header>
+
+      <main>
+        <!-- 1. GitHub -->
+        <section class="card">
+          <h2>1. GitHub (repos)</h2>
+          <div class="flex">
+            <button type="button" id="github-connect">Connect GitHub</button>
+            <span class="pill" id="github-status">Not connected</span>
+          </div>
+          <div id="github-repos-wrap" style="display: none;">
+            <label>Select repos to include</label>
+            <div class="repo-list" id="github-repos"></div>
+          </div>
+        </section>
+
+        <!-- 2. LinkedIn (paste) -->
+        <section class="card">
+          <h2>2. LinkedIn (paste experience / summary)</h2>
+          <textarea id="linkedin" rows="4" placeholder="Paste your LinkedIn headline, experience, education, skills..."></textarea>
+        </section>
+
+        <!-- 3. Personal & academic -->
+        <section class="card">
+          <h2>3. Personal & academic</h2>
+          <div class="row">
+            <div><label for="name">Full name *</label><input id="name" placeholder="Your name" required /></div>
+            <div><label for="major">Major / field</label><input id="major" placeholder="Computer Science" /></div>
+          </div>
+          <div class="row">
+            <div><label for="age">Age (optional)</label><input id="age" type="number" min="0" placeholder="25" /></div>
+            <div><label for="cgpa">CGPA (optional)</label><input id="cgpa" placeholder="3.85 / 4.0" /></div>
+          </div>
+          <div class="flex">
+            <label style="margin:0; display:flex; align-items:center; gap:0.35rem;"><input type="checkbox" id="show-age" checked /> Show age</label>
+            <label style="margin:0; display:flex; align-items:center; gap:0.35rem;"><input type="checkbox" id="show-cgpa" checked /> Show CGPA</label>
+          </div>
+        </section>
+
+        <!-- 4. Job -->
+        <section class="card">
+          <h2>4. Target job</h2>
+          <label for="job-url">Job URL</label>
+          <div class="flex">
+            <input id="job-url" placeholder="https://linkedin.com/jobs/..." style="margin-bottom:0" />
+            <button type="button" id="job-fetch" class="secondary">Fetch description</button>
+          </div>
+          <label for="job-desc">Job description (paste if fetch fails)</label>
+          <textarea id="job-desc" rows="5" placeholder="Paste the full job description here..."></textarea>
+        </section>
+
+        <!-- 5. Good to have -->
+        <section class="card">
+          <h2>5. Good-to-have & preferences</h2>
+          <textarea id="good-to-have" rows="3" placeholder="e.g. Interested in GPU/CUDA, 1-page only, impact-focused..."></textarea>
+        </section>
+
+        <!-- Generate -->
+        <section class="card">
+          <div class="flex">
+            <button type="button" id="generate-btn">Generate LaTeX resume</button>
+            <button type="button" id="save-btn" class="secondary" style="display:none;">Save edits</button>
+            <button type="button" id="save-new-btn" class="secondary">Save as new resume</button>
+          </div>
+          <p id="status" class="status"></p>
+        </section>
+
+        <!-- 6. LaTeX editor & preview -->
+        <section class="card">
+          <h2>6. LaTeX (edit and save)</h2>
+          <textarea id="latex-output" rows="18" placeholder="Generated LaTeX will appear here. Edit and click Save edits." style="font-family: ui-monospace, monospace; font-size: 0.85rem;"></textarea>
+          <div class="flex" style="margin-top:0.5rem">
+            <button type="button" id="download-tex" class="secondary">Download .tex</button>
+          </div>
+        </section>
+
+        <!-- Saved resumes -->
+        <section class="card">
+          <h2>Saved resumes</h2>
+          <ul class="resume-list" id="resume-list"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (async function() {
+      let API = 'http://localhost:8000';
+      var isLocal = /^localhost$|^127\.0\.0\.1$/i.test(window.location.hostname) || window.location.protocol === 'file:';
+      if (!isLocal) {
+        try {
+          const c = await fetch('/api/config').then(r => r.json());
+          if (c && c.API) API = c.API;
+        } catch (e) {}
+      }
+
+      const qs = new URLSearchParams(location.search);
+      let githubState = localStorage.getItem('github_state') || qs.get('github_state') || '';
+      let currentResumeId = null;
+
+      if (qs.get('github_state')) {
+        githubState = qs.get('github_state');
+        localStorage.setItem('github_state', githubState);
+        history.replaceState({}, '', location.pathname);
+      }
+
+      async function api(path, opts = {}) {
+        const res = await fetch(API + path, {
+          headers: { 'Content-Type': 'application/json', ...opts.headers },
+          ...opts
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+        return res.json();
+      }
+
+      function setStatus(msg, isError = false) {
+        const el = document.getElementById('status');
+        el.textContent = msg;
+        el.className = 'status' + (isError ? ' error' : ' success');
+      }
+
+      // GitHub connect
+      document.getElementById('github-connect').onclick = async () => {
+        try {
+          const { auth_url, state } = await api('/auth/github');
+          localStorage.setItem('github_state', state);
+          githubState = state;
+          window.open(auth_url, '_blank', 'width=600,height=700');
+          setStatus('Complete auth in the popup; then refresh or click Connect again to load repos.');
+        } catch (e) {
+          setStatus('Backend not running or GitHub OAuth not configured: ' + e.message, true);
+        }
+      };
+
+      async function loadRepos() {
+        if (!githubState) return;
+        try {
+          const data = await api('/repos?state=' + encodeURIComponent(githubState));
+          const wrap = document.getElementById('github-repos-wrap');
+          const list = document.getElementById('github-repos');
+          const status = document.getElementById('github-status');
+          if (data.connected && data.repos && data.repos.length) {
+            status.textContent = 'Connected · ' + data.repos.length + ' repos';
+            wrap.style.display = 'block';
+            list.innerHTML = data.repos.map(r =>
+              `<div class="repo-item"><input type="checkbox" data-repo='${JSON.stringify({ name: r.name, description: r.description || '', language: r.language || '', stars: r.stars || 0, url: r.url || '' })}' /><span>${r.name}</span> ${r.language ? `(${r.language})` : ''}</div>`
+            ).join('');
+          } else {
+            status.textContent = data.connected ? 'Connected' : 'Not connected';
+            wrap.style.display = 'none';
+          }
+        } catch (_) {
+          document.getElementById('github-status').textContent = 'Not connected';
+        }
+      }
+      loadRepos();
+
+      // Job fetch
+      document.getElementById('job-fetch').onclick = async () => {
+        const url = document.getElementById('job-url').value.trim();
+        const pasted = document.getElementById('job-desc').value.trim();
+        if (!url && !pasted) { setStatus('Enter a job URL or paste description.', true); return; }
+        setStatus('Fetching...');
+        try {
+          const data = await api('/job/fetch', {
+            method: 'POST',
+            body: JSON.stringify({ job_url: url || null, job_description: pasted || null })
+          });
+          if (data.raw_text) document.getElementById('job-desc').value = data.raw_text;
+          if (data.error) setStatus(data.error, true);
+          else setStatus('Fetched. You can edit the text above.');
+        } catch (e) {
+          setStatus(e.message, true);
+        }
+      };
+
+      function getSelectedRepos() {
+        return Array.from(document.querySelectorAll('#github-repos input:checked'))
+          .map(el => JSON.parse(el.dataset.repo));
+      }
+
+      // Generate
+      document.getElementById('generate-btn').onclick = async () => {
+        const name = document.getElementById('name').value.trim();
+        if (!name) { setStatus('Enter your name.', true); return; }
+        setStatus('Generating...');
+        document.getElementById('generate-btn').disabled = true;
+        try {
+          const body = {
+            profile: {
+              name,
+              major: document.getElementById('major').value.trim(),
+              age: document.getElementById('age').value ? parseInt(document.getElementById('age').value, 10) : null,
+              cgpa: document.getElementById('cgpa').value.trim() || null,
+              show_age: document.getElementById('show-age').checked,
+              show_cgpa: document.getElementById('show-cgpa').checked
+            },
+            job: {
+              job_url: document.getElementById('job-url').value.trim() || null,
+              job_description: document.getElementById('job-desc').value.trim() || null
+            },
+            good_to_have: { text: document.getElementById('good-to-have').value.trim() },
+            github_repos: getSelectedRepos(),
+            linkedin_text: document.getElementById('linkedin').value.trim()
+          };
+          const data = await api('/generate-resume', { method: 'POST', body: JSON.stringify(body) });
+          document.getElementById('latex-output').value = data.latex || '';
+          if (data.resume_id) {
+            currentResumeId = data.resume_id;
+            document.getElementById('save-btn').style.display = '';
+          }
+          setStatus(data.error ? 'Generated with fallback; ' + data.error : 'Generated. Edit above and click Save edits if needed.', !!data.error);
+        } catch (e) {
+          setStatus(e.message, true);
+        }
+        document.getElementById('generate-btn').disabled = false;
+      };
+
+      // Save edits
+      document.getElementById('save-btn').onclick = async () => {
+        if (!currentResumeId) return;
+        const latex = document.getElementById('latex-output').value.trim();
+        if (!latex) { setStatus('Nothing to save.', true); return; }
+        setStatus('Saving...');
+        try {
+          await api('/resumes/' + currentResumeId, {
+            method: 'PUT',
+            body: JSON.stringify({ latex })
+          });
+          setStatus('Saved.');
+          loadResumeList();
+        } catch (e) {
+          setStatus(e.message, true);
+        }
+      };
+
+      // Save as new
+      document.getElementById('save-new-btn').onclick = async () => {
+        const latex = document.getElementById('latex-output').value.trim();
+        if (!latex) { setStatus('Generate or paste LaTeX first.', true); return; }
+        setStatus('Saving...');
+        try {
+          const r = await api('/resumes', {
+            method: 'POST',
+            body: JSON.stringify({ latex })
+          });
+          currentResumeId = r.id;
+          document.getElementById('save-btn').style.display = '';
+          setStatus('Saved as new resume.');
+          loadResumeList();
+        } catch (e) {
+          setStatus(e.message, true);
+        }
+      };
+
+      // Download .tex
+      document.getElementById('download-tex').onclick = () => {
+        const latex = document.getElementById('latex-output').value;
+        if (!latex) { setStatus('No LaTeX to download.', true); return; }
+        const blob = new Blob([latex], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'resume.tex';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        setStatus('Downloaded resume.tex');
+      };
+
+      async function loadResumeList() {
+        try {
+          const data = await api('/resumes');
+          const list = document.getElementById('resume-list');
+          list.innerHTML = (data.resumes || []).map(r =>
+            `<li><span>${r.title || r.job_title || r.id.slice(0,8)}</span><button type="button" data-id="${r.id}">Open</button></li>`
+          ).join('');
+          list.querySelectorAll('button').forEach(btn => {
+            btn.onclick = () => loadResume(btn.dataset.id);
+          });
+        } catch (_) {}
+      }
+      loadResumeList();
+
+      async function loadResume(id) {
+        try {
+          const r = await api('/resumes/' + id);
+          document.getElementById('latex-output').value = r.latex || '';
+          currentResumeId = r.id;
+          document.getElementById('save-btn').style.display = '';
+          setStatus('Loaded. Edit and click Save edits to update.');
+        } catch (e) {
+          setStatus(e.message, true);
+        }
+      }
+
+      })();
+    </script>
+  </body>
+</html>
