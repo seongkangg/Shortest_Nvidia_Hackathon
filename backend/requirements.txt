@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+python-multipart
+httpx
+jinja2
+aiosqlite

@@ -1,0 +1,29 @@
+You are an expert resume writer. Generate a single, professional LaTeX resume that fits on one page.
+
+## Candidate information
+- Name: {{ name }}
+- Major/Field: {{ major }}
+{% if show_age and age is not none %}- Age: {{ age }}
+{% endif %}
+{% if show_cgpa and cgpa %}- CGPA: {{ cgpa }}
+{% endif %}
+
+## GitHub projects to highlight
+{% for repo in github_repos %}
+- {{ repo.name }}{% if repo.description %}: {{ repo.description }}{% endif %} ({{ repo.language or "N/A" }}, {{ repo.stars }} stars)
+{% endfor %}
+
+## LinkedIn / experience (if provided)
+{{ linkedin_text }}
+
+## Target job description
+{{ job_description }}
+
+## Good-to-have / candidate preferences
+{{ good_to_have }}
+
+## Instructions
+- Output ONLY valid LaTeX. Use a clean, standard resume structure (documentclass article or similar, sections: Education, Experience, Projects, Skills).
+- Tailor wording to the job description; use keywords from the job where relevant.
+- Do not include any markdown, explanations, or text outside the LaTeX.
+- Start with \documentclass and end with \end{document}.
