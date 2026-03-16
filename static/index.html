@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; max-width: 1100px; }
+    h1 { margin-bottom: 4px; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 14px; flex: 1 1 320px; min-width: 320px; }
+    label { display: block; margin: 8px 0 4px; font-size: 13px; color: #333; }
+    input, textarea, button { width: 100%; padding: 8px; box-sizing: border-box; }
+    textarea { min-height: 90px; font-family: Consolas, monospace; }
+    button { cursor: pointer; margin-top: 10px; }
+    #latex { min-height: 300px; }
+    #status { white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 8px; }
+    .small { font-size: 12px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Resume Builder</h1>
+  <p class="small">GitHub + LinkedIn + Job Description + NVIDIA Nemotron -> LaTeX resume</p>
+
+  <div class="row">
+    <div class="card">
+      <h3>Profile</h3>
+      <label>Name *</label><input id="name" />
+      <label>Age</label><input id="age" type="number" />
+      <label>Major</label><input id="major" />
+      <label>CGPA</label><input id="cgpa" />
+      <label>Email</label><input id="email" />
+      <label>Phone</label><input id="phone" />
+      <label>Location</label><input id="location" />
+      <label>LinkedIn URL</label><input id="linkedin_url" />
+      <label>GitHub URL</label><input id="github_url" />
+      <label>Good to have (comma separated)</label><input id="good_to_have" placeholder="leadership, python, machine learning" />
+    </div>
+
+    <div class="card">
+      <h3>Integrations</h3>
+      <label>Session ID</label><input id="session_id" />
+      <label>GitHub token (optional, direct)</label><input id="github_token" />
+      <label>LinkedIn token (optional, direct)</label><input id="linkedin_token" />
+      <button onclick="fetchRepos()">Load GitHub Repos</button>
+      <button onclick="fetchLinkedIn()">Load LinkedIn Profile</button>
+      <div class="small" id="integration_info"></div>
+
+      <h4>Job</h4>
+      <label>Job URL</label><input id="job_url" placeholder="https://..." />
+      <label>Job Description (optional; if empty and URL exists, it will fetch)</label>
+      <textarea id="job_description"></textarea>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card" style="flex-basis: 100%;">
+      <h3>Generate & Edit LaTeX</h3>
+      <button onclick="generateResume()">Generate Resume LaTeX</button>
+      <button onclick="compileLatex()">Compile PDF</button>
+      <label>Editable LaTeX</label>
+      <textarea id="latex"></textarea>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card" style="flex-basis: 100%;">
+      <h3>PDF Preview</h3>
+      <iframe id="pdf_frame" style="width:100%; height:650px; border:1px solid #ccc;"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const sessionInput = document.getElementById("session_id");
+    if (!localStorage.getItem("resume_builder_session")) {
+      localStorage.setItem("resume_builder_session", "sess_" + Math.random().toString(36).slice(2));
+    }
+    sessionInput.value = localStorage.getItem("resume_builder_session");
+
+    async function fetchRepos() {
+      const session_id = sessionInput.value.trim();
+      const token = document.getElementById("github_token").value.trim();
+      const qs = new URLSearchParams({ session_id, include_readme: "false" });
+      if (token) qs.set("token", token);
+      const res = await fetch(`/api/github/repos?${qs.toString()}`);
+      const txt = await res.text();
+      document.getElementById("integration_info").innerText = "GitHub repos:\n" + txt.slice(0, 1200);
+    }
+
+    async function fetchLinkedIn() {
+      const session_id = sessionInput.value.trim();
+      const token = document.getElementById("linkedin_token").value.trim();
+      const qs = new URLSearchParams({ session_id });
+      if (token) qs.set("token", token);
+      const res = await fetch(`/api/linkedin/profile?${qs.toString()}`);
+      const txt = await res.text();
+      document.getElementById("integration_info").innerText = "LinkedIn profile:\n" + txt.slice(0, 1200);
+    }
+
+    function profilePayload() {
+      return {
+        name: document.getElementById("name").value.trim(),
+        age: parseInt(document.getElementById("age").value || "0") || null,
+        major: document.getElementById("major").value.trim() || null,
+        cgpa: document.getElementById("cgpa").value.trim() || null,
+        email: document.getElementById("email").value.trim() || null,
+        phone: document.getElementById("phone").value.trim() || null,
+        location: document.getElementById("location").value.trim() || null,
+        linkedin_url: document.getElementById("linkedin_url").value.trim() || null,
+        github_url: document.getElementById("github_url").value.trim() || null,
+        good_to_have: (document.getElementById("good_to_have").value || "")
+          .split(",")
+          .map(s => s.trim())
+          .filter(Boolean)
+      };
+    }
+
+    async function generateResume() {
+      const payload = {
+        session_id: sessionInput.value.trim(),
+        profile: profilePayload(),
+        job_url: document.getElementById("job_url").value.trim() || null,
+        job_description: document.getElementById("job_description").value.trim() || null,
+        github_token: document.getElementById("github_token").value.trim() || null,
+        linkedin_token: document.getElementById("linkedin_token").value.trim() || null,
+        include_readme: false,
+        selected_repo_names: []
+      };
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("status").innerText = "Error:\n" + JSON.stringify(data, null, 2);
+        return;
+      }
+      document.getElementById("latex").value = data.latex || "";
+      document.getElementById("status").innerText = "Generated.\nWarnings:\n" + (data.warnings || []).join("\n");
+    }
+
+    async function compileLatex() {
+      const latex = document.getElementById("latex").value;
+      const res = await fetch("/api/compile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latex })
+      });
+      const data = await res.json();
+      document.getElementById("status").innerText = data.message || "";
+      if (data.success && data.pdf_base64) {
+        document.getElementById("pdf_frame").src = "data:application/pdf;base64," + data.pdf_base64;
+      }
+    }
+  </script>
+</body>
+</html>
