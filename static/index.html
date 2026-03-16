@@ -41,9 +41,9 @@
       <h3>Integrations</h3>
       <label>Session ID</label><input id="session_id" />
       <label>GitHub token (optional, direct)</label><input id="github_token" />
-      <label>LinkedIn token (optional, direct)</label><input id="linkedin_token" />
+      <label>LinkedIn profile URL (public)</label><input id="linkedin_profile_url" placeholder="https://www.linkedin.com/in/your-handle" />
       <button onclick="fetchRepos()">Load GitHub Repos</button>
-      <button onclick="fetchLinkedIn()">Load LinkedIn Profile</button>
+      <button onclick="fetchLinkedIn()">Scrape LinkedIn Profile</button>
       <div class="small" id="integration_info"></div>
 
       <h4>Job</h4>
@@ -90,9 +90,12 @@
 
     async function fetchLinkedIn() {
       const session_id = sessionInput.value.trim();
-      const token = document.getElementById("linkedin_token").value.trim();
+      const profile_url = (
+        document.getElementById("linkedin_profile_url").value.trim() ||
+        document.getElementById("linkedin_url").value.trim()
+      );
       const qs = new URLSearchParams({ session_id });
-      if (token) qs.set("token", token);
+      if (profile_url) qs.set("profile_url", profile_url);
       const res = await fetch(`/api/linkedin/profile?${qs.toString()}`);
       const txt = await res.text();
       document.getElementById("integration_info").innerText = "LinkedIn profile:\n" + txt.slice(0, 1200);
@@ -123,7 +126,11 @@
         job_url: document.getElementById("job_url").value.trim() || null,
         job_description: document.getElementById("job_description").value.trim() || null,
         github_token: document.getElementById("github_token").value.trim() || null,
-        linkedin_token: document.getElementById("linkedin_token").value.trim() || null,
+        linkedin_profile_url: (
+          document.getElementById("linkedin_profile_url").value.trim() ||
+          document.getElementById("linkedin_url").value.trim() ||
+          null
+        ),
         include_readme: false,
         selected_repo_names: []
       };

@@ -20,7 +20,7 @@ from app.services.auth_store import token_store
 from app.services.github_client import list_repos
 from app.services.job_parser import extract_job_structure, fetch_job_description
 from app.services.latex import compile_latex_to_pdf_base64, render_resume_latex
-from app.services.linkedin_client import fetch_profile
+from app.services.linkedin_client import fetch_profile, fetch_profile_from_url
 from app.services.llm import tailor_resume_content
 
 
@@ -136,10 +136,23 @@ async def github_repos(session_id: str, include_readme: bool = False, token: str
 
 
 @app.get("/api/linkedin/profile", response_model=LinkedInProfile)
-async def linkedin_profile(session_id: str, token: str | None = None) -> LinkedInProfile:
-    li_token = token or token_store.get_linkedin_token(session_id)
+async def linkedin_profile(
+    session_id: str | None = None,
+    token: str | None = None,
+    profile_url: str | None = None,
+) -> LinkedInProfile:
+    if profile_url:
+        try:
+            return await fetch_profile_from_url(profile_url)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"LinkedIn profile scrape error: {e}") from e
+
+    li_token = token or (token_store.get_linkedin_token(session_id) if session_id else None)
     if not li_token:
-        raise HTTPException(status_code=400, detail="Missing LinkedIn token. Connect account or provide token.")
+        raise HTTPException(
+            status_code=400,
+            detail="Provide LinkedIn profile_url or token (or connect via OAuth).",
+        )
     try:
         return await fetch_profile(li_token)
     except Exception as e:
@@ -173,7 +186,13 @@ async def generate_resume(payload: GenerateResumeRequest) -> GenerateResumeRespo
         warnings.append("No GitHub token found. Project section may be limited.")
 
     linkedin_profile_data = payload.linkedin_profile_override
+    profile_url = str(payload.linkedin_profile_url or payload.profile.linkedin_url or "").strip()
     li_token = payload.linkedin_token or token_store.get_linkedin_token(payload.session_id)
+    if not linkedin_profile_data and profile_url:
+        try:
+            linkedin_profile_data = await fetch_profile_from_url(profile_url)
+        except Exception as e:
+            warnings.append(f"LinkedIn profile URL could not be scraped: {e}")
     if not linkedin_profile_data and li_token:
         try:
             linkedin_profile_data = await fetch_profile(li_token)
