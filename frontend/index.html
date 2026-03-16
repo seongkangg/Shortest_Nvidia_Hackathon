@@ -173,7 +173,13 @@
     </div>
 
     <script>
-      const API = 'http://localhost:8000'; // Backend; change if deployed
+      (async function() {
+      let API = 'http://localhost:8000';
+      try {
+        const c = await fetch('/api/config').then(r => r.json());
+        if (c && c.API) API = c.API;
+      } catch (e) {}
+
       const qs = new URLSearchParams(location.search);
       let githubState = localStorage.getItem('github_state') || qs.get('github_state') || '';
       let currentResumeId = null;
@@ -371,6 +377,8 @@
           setStatus(e.message, true);
         }
       }
+
+      })();
     </script>
   </body>
 </html>

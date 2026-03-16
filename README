@@ -259,10 +259,72 @@ An AI-powered resume builder that connects to your GitHub and LinkedIn accounts,
 
 - **Prerequisites**: Python 3.10+, pip. Optional: LaTeX (for PDF), GitHub OAuth app, NVIDIA Nemotron endpoint.
 - **Backend** (from project root):
-  - `cd backend && pip install -r requirements.txt`
-  - Copy `.env.example` to `.env` in the project root and set `NVIDIA_NEMOTRON_ENDPOINT`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (and `API_BASE_URL=http://localhost:8000`, `APP_BASE_URL=http://localhost:3000`).
-  - Run: `uvicorn app:app --reload --port 8000`
-- **Frontend**: Serve `frontend/index.html` on port 3000 (e.g. `cd frontend && npx serve -p 3000` or open the file via a server that sets the correct API URL). The page expects the API at `http://localhost:8000` when opened from `localhost:3000`.
+  - `cd backend && pip install -r requirements.txt` (if SSL errors, add `--trusted-host pypi.org --trusted-host files.pythonhosted.org`).
+  - Copy `.env.example` to `.env` in the project root and set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and optionally `NVIDIA_NEMOTRON_ENDPOINT` / `NVIDIA_NEMOTRON_API_KEY`. Set `API_BASE_URL=http://localhost:8000` and `APP_BASE_URL=http://localhost:3000` for local run.
+  - Run: `cd backend && .venv/bin/uvicorn app:app --reload --port 8000` (or `uvicorn app:app --reload --port 8000` from inside `backend/`).
+- **Frontend**: Serve the frontend on port 3000 so the app can call the API and GitHub OAuth redirect works:
+  - `cd frontend && npx serve -p 3000`  
+  - Or: `cd frontend && python3 -m http.server 3000`  
+  Then open **http://localhost:3000** in your browser. The page calls the API at `http://localhost:8000`.
 - **Features**: Connect GitHub (repos), paste LinkedIn text, name/major/age/CGPA, job URL + fetch or paste description, good-to-have, generate LaTeX (Nemotron or fallback), edit and save resumes, download .tex, list and reopen saved resumes.
+
+## Vercel deploy – step by step
+
+### Step 1: Push your code to GitHub
+- Commit and push this repo to GitHub (if you haven’t already).
+- You’ll connect that repo to Vercel in the next step.
+
+### Step 2: Create a Vercel project from the repo
+1. Go to **[vercel.com](https://vercel.com)** and sign in (GitHub is easiest).
+2. Click **“Add New…”** → **“Project”**.
+3. Under **“Import Git Repository”**, select your **Shortest_Nvidia_Hackathon** repo (or the one you pushed).
+4. Click **“Import”**.
+5. On the **Configure Project** screen:
+   - **Framework Preset**: leave as “Other” (or “No framework”).
+   - **Root Directory**: leave **default** (project root).
+   - **Build Command**: leave as-is (the repo’s `vercel.json` uses `echo 'No build'`).
+   - **Output Directory**: leave as-is (`vercel.json` sets it to `frontend`).
+6. **Do not** add any environment variables yet. Click **“Deploy”**.
+7. Wait for the deploy to finish. You’ll get a URL like `https://your-project.vercel.app`. Open it to confirm the resume builder UI loads (it will show an error when calling the API until you set the backend and `API_URL`).
+
+### Step 3: Add the backend URL in Vercel
+1. In Vercel, open your **project** (the one you just deployed).
+2. Go to the **“Settings”** tab.
+3. In the left sidebar, click **“Environment Variables”**.
+4. Add one variable:
+   - **Key:** `API_URL`  
+   - **Value:** your backend URL, e.g. `https://your-backend.railway.app` (no trailing slash).  
+   - **Environment:** leave all three checked (Production, Preview, Development) or at least **Production**.
+5. Click **“Save”**.
+6. Go to the **“Deployments”** tab, open the **⋮** menu on the latest deployment, and click **“Redeploy”** so the new `API_URL` is used.
+
+### Step 4: Deploy the backend (if not done yet)
+The frontend needs a live backend. Deploy the **backend** (FastAPI app in `/backend`) to any host, for example:
+- **Railway**: [railway.app](https://railway.app) → New Project → Deploy from GitHub (select this repo, set root to `backend` or run `uvicorn app:app --host 0.0.0.0 --port $PORT`), add env vars from your `.env`.
+- **Render**: [render.com](https://render.com) → New → Web Service → connect repo, set build to `pip install -r backend/requirements.txt` and start to `uvicorn app:app --host 0.0.0.0 --port $PORT`, set root to `backend` or adjust paths, add env vars.
+
+Then set the backend’s env:
+- `API_BASE_URL` = your backend’s public URL (e.g. `https://your-app.railway.app`).
+- `APP_BASE_URL` = your Vercel URL (e.g. `https://your-project.vercel.app`).
+
+Use that **backend URL** as `API_URL` in Vercel (Step 3).
+
+### Step 5: GitHub OAuth (for “Connect GitHub”)
+1. In [GitHub → Settings → Developer settings → OAuth Apps](https://github.com/settings/developers), open your OAuth app (or create one).
+2. Set **Authorization callback URL** to:  
+   `https://<your-backend-url>/auth/github/callback`  
+   Example: `https://your-app.railway.app/auth/github/callback`.
+3. Save. Now “Connect GitHub” in the resume builder will work once the backend is deployed and env vars are set.
+
+### Step 6: Check that everything works
+- Open your Vercel URL (e.g. `https://your-project.vercel.app`).
+- Fill in name, optional job description, and click **Generate LaTeX resume**. You should get a resume (or a fallback template if Nemotron isn’t configured).
+- If you set up the backend and GitHub OAuth, try **Connect GitHub** and **Fetch description** to confirm end-to-end.
+
+## Deploy / verify
+
+- **Backend** was verified locally: `GET /health`, `POST /job/fetch`, `POST /generate-resume`, `GET /resumes`, `GET /auth/github` all respond correctly. With no Nemotron endpoint, generation returns a fallback LaTeX template and still creates a saved resume.
+- **Frontend**: Run the backend and a static server (see above), then open http://localhost:3000 to use the full flow (GitHub connect, job fetch, generate, edit, save, download .tex).
+- For **production**: deploy backend (Railway, Render, Fly.io), then deploy frontend to Vercel and set `API_URL` to the backend URL. Update GitHub OAuth callback to your backend’s `/auth/github/callback`.
 
 

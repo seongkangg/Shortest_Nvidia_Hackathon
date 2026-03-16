@@ -17,5 +17,8 @@ backend/resumes.db
 # Node / frontend (if you add npm later)
 node_modules/
 
+# Vercel
+.vercel
+
 # OS
 .DS_Store
