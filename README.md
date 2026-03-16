@@ -159,7 +159,7 @@ Implemented in this repository:
 - Browser UI at `/` with:
   - Profile and “good to have” fields
   - Job URL + manual JD input
-  - Token inputs for GitHub and LinkedIn
+  - GitHub token input + LinkedIn profile URL scraping
   - Editable LaTeX textarea + PDF preview iframe
 
 ### Run Locally
@@ -177,6 +177,6 @@ Implemented in this repository:
 
 ### Notes
 
-- For fastest testing, paste GitHub and LinkedIn tokens directly in UI fields.
+- For fastest testing, paste a GitHub token and a public LinkedIn profile URL directly in UI fields.
 - OAuth callback routes are present, but require valid provider app setup and matching redirect URIs.
 - PDF compile requires `pdflatex` installed and available on PATH.
