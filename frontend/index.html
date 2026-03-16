@@ -175,10 +175,13 @@
     <script>
       (async function() {
       let API = 'http://localhost:8000';
-      try {
-        const c = await fetch('/api/config').then(r => r.json());
-        if (c && c.API) API = c.API;
-      } catch (e) {}
+      var isLocal = /^localhost$|^127\.0\.0\.1$/i.test(window.location.hostname) || window.location.protocol === 'file:';
+      if (!isLocal) {
+        try {
+          const c = await fetch('/api/config').then(r => r.json());
+          if (c && c.API) API = c.API;
+        } catch (e) {}
+      }
 
       const qs = new URLSearchParams(location.search);
       let githubState = localStorage.getItem('github_state') || qs.get('github_state') || '';

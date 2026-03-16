@@ -27,3 +27,6 @@ LINKEDIN_CALLBACK_PATH = "/auth/linkedin/callback"
 
 # DB (default: backend/resumes.db)
 DATABASE_PATH = os.getenv("DATABASE_PATH", str(Path(__file__).resolve().parent / "resumes.db"))
+
+# CORS: comma-separated list of allowed origins (e.g. https://your-app.vercel.app). Localhost is always allowed.
+CORS_ORIGINS_EXTRA = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]

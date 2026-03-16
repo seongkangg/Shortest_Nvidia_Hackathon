@@ -265,7 +265,8 @@ An AI-powered resume builder that connects to your GitHub and LinkedIn accounts,
 - **Frontend**: Serve the frontend on port 3000 so the app can call the API and GitHub OAuth redirect works:
   - `cd frontend && npx serve -p 3000`  
   - Or: `cd frontend && python3 -m http.server 3000`  
-  Then open **http://localhost:3000** in your browser. The page calls the API at `http://localhost:8000`.
+  Then open **http://localhost:3000** in your browser (do **not** open the HTML file directly with `file://` — the app must be served from localhost so it can connect to the backend).
+- **Connecting to localhost**: The backend allows CORS from `http://localhost:3000`, `http://127.0.0.1:3000`, and `file://`. The frontend uses `http://localhost:8000` as the API when the page is on localhost or opened as a file. If the backend is running on 8000 and you open the app from **http://localhost:3000**, “Connect GitHub”, “Generate”, and “Save” should work.
 - **Features**: Connect GitHub (repos), paste LinkedIn text, name/major/age/CGPA, job URL + fetch or paste description, good-to-have, generate LaTeX (Nemotron or fallback), edit and save resumes, download .tex, list and reopen saved resumes.
 
 ## Vercel deploy – step by step

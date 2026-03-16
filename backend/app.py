@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from config import APP_BASE_URL, API_BASE_URL
+from config import APP_BASE_URL, API_BASE_URL, CORS_ORIGINS_EXTRA
 from github_service import (
     exchange_github_code,
     fetch_repos,
@@ -27,9 +27,17 @@ from resume_store import create_resume, get_resume, list_resumes, update_resume
 
 app = FastAPI(title="Nemotron Resume Builder API")
 
+# Allow localhost and file:// for local dev; add CORS_ORIGINS in .env for production (e.g. https://your-app.vercel.app)
+_cors_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "null",
+] + CORS_ORIGINS_EXTRA
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
