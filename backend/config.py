@@ -20,11 +20,6 @@ GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
 GITHUB_CALLBACK_PATH = "/auth/github/callback"
 
-# LinkedIn (OAuth or paste; API access restricted)
-LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID", "")
-LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET", "")
-LINKEDIN_CALLBACK_PATH = "/auth/linkedin/callback"
-
 # DB (default: backend/resumes.db)
 DATABASE_PATH = os.getenv("DATABASE_PATH", str(Path(__file__).resolve().parent / "resumes.db"))
 

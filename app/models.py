@@ -43,11 +43,8 @@ class GenerateResumeRequest(BaseModel):
     job_url: Optional[HttpUrl] = None
     job_description: Optional[str] = None
     github_token: Optional[str] = None
-    linkedin_token: Optional[str] = None
-    linkedin_profile_url: Optional[HttpUrl] = None
     include_readme: bool = False
     selected_repo_names: List[str] = Field(default_factory=list)
-    linkedin_profile_override: Optional[LinkedInProfile] = None
 
 
 class GenerateResumeResponse(BaseModel):

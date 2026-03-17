@@ -41,18 +41,12 @@ class ReposResponse(BaseModel):
     connected: bool = True
 
 
-# ----- LinkedIn (paste or OAuth) -----
-class LinkedInPasteInput(BaseModel):
-    text: str = Field("", description="Pasted LinkedIn summary, experience, education")
-
-
 # ----- Generate resume -----
 class GenerateResumeRequest(BaseModel):
     profile: ProfileInput
     job: JobInput
     good_to_have: GoodToHaveInput = Field(default_factory=GoodToHaveInput)
     github_repos: list[RepoSummary] = Field(default_factory=list)
-    linkedin_text: str = Field("")
     preferences: Optional[dict[str, Any]] = Field(None, description="e.g. tone, length")
 
 

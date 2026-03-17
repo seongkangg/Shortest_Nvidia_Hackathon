@@ -86,7 +86,7 @@
         <p class="pill">Nemotron-powered resume builder · nvidia/nvidia-nemotron-nano-9b-v2</p>
         <h1>AI Resume Builder</h1>
         <p style="color: var(--muted); max-width: 36rem; font-size: 0.9rem">
-          Connect GitHub (repos), add LinkedIn summary, paste a job link or description, and generate a LaTeX resume. Edit and save anytime.
+          Connect GitHub (repos), add job description, generate a LaTeX resume. Edit and save anytime.
         </p>
       </header>
 
@@ -104,15 +104,9 @@
           </div>
         </section>
 
-        <!-- 2. LinkedIn (paste) -->
+        <!-- 2. Personal & academic -->
         <section class="card">
-          <h2>2. LinkedIn (paste experience / summary)</h2>
-          <textarea id="linkedin" rows="4" placeholder="Paste your LinkedIn headline, experience, education, skills..."></textarea>
-        </section>
-
-        <!-- 3. Personal & academic -->
-        <section class="card">
-          <h2>3. Personal & academic</h2>
+          <h2>2. Personal & academic</h2>
           <div class="row">
             <div><label for="name">Full name *</label><input id="name" placeholder="Your name" required /></div>
             <div><label for="major">Major / field</label><input id="major" placeholder="Computer Science" /></div>
@@ -127,9 +121,9 @@
           </div>
         </section>
 
-        <!-- 4. Job -->
+        <!-- 3. Job -->
         <section class="card">
-          <h2>4. Target job</h2>
+          <h2>3. Target job</h2>
           <label for="job-url">Job URL</label>
           <div class="flex">
             <input id="job-url" placeholder="https://linkedin.com/jobs/..." style="margin-bottom:0" />
@@ -139,9 +133,9 @@
           <textarea id="job-desc" rows="5" placeholder="Paste the full job description here..."></textarea>
         </section>
 
-        <!-- 5. Good to have -->
+        <!-- 4. Good to have -->
         <section class="card">
-          <h2>5. Good-to-have & preferences</h2>
+          <h2>4. Good-to-have & preferences</h2>
           <textarea id="good-to-have" rows="3" placeholder="e.g. Interested in GPU/CUDA, 1-page only, impact-focused..."></textarea>
         </section>
 
@@ -155,9 +149,9 @@
           <p id="status" class="status"></p>
         </section>
 
-        <!-- 6. LaTeX editor & preview -->
+        <!-- 5. LaTeX editor & preview -->
         <section class="card">
-          <h2>6. LaTeX (edit and save)</h2>
+          <h2>5. LaTeX (edit and save)</h2>
           <textarea id="latex-output" rows="18" placeholder="Generated LaTeX will appear here. Edit and click Save edits." style="font-family: ui-monospace, monospace; font-size: 0.85rem;"></textarea>
           <div class="flex" style="margin-top:0.5rem">
             <button type="button" id="download-tex" class="secondary">Download .tex</button>
@@ -290,7 +284,6 @@
             },
             good_to_have: { text: document.getElementById('good-to-have').value.trim() },
             github_repos: getSelectedRepos(),
-            linkedin_text: document.getElementById('linkedin').value.trim()
           };
           const data = await api('/generate-resume', { method: 'POST', body: JSON.stringify(body) });
           document.getElementById('latex-output').value = data.latex || '';

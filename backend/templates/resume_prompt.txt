@@ -13,7 +13,7 @@ You are an expert resume writer. Generate a single, professional LaTeX resume th
 - {{ repo.name }}{% if repo.description %}: {{ repo.description }}{% endif %} ({{ repo.language or "N/A" }}, {{ repo.stars }} stars)
 {% endfor %}
 
-## LinkedIn / experience (if provided)
+## Extra experience / notes (optional)
 {{ linkedin_text }}
 
 ## Target job description

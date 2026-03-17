@@ -28,7 +28,7 @@ def _render_prompt(req: GenerateResumeRequest) -> str:
         show_age=req.profile.show_age,
         show_cgpa=req.profile.show_cgpa,
         github_repos=req.github_repos or [],
-        linkedin_text=req.linkedin_text or "(Not provided)",
+        linkedin_text="(N/A — profile + GitHub + job only)",
         job_description=req.job.job_description or req.job.job_url or "(Not provided)",
         good_to_have=req.good_to_have.text if req.good_to_have else "(Not provided)",
     )
